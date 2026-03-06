@@ -1,14 +1,22 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApp, getApps } from "firebase/app";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCx0DXqQcFtEb_wnVgzB3j-qGnzeKytqWg",
-    authDomain: "civicprojectbackend.firebaseapp.com",
-    projectId: "civicprojectbackend",
-    storageBucket: "civicprojectbackend.firebasestorage.app",
-    messagingSenderId: "892321252302",
-    appId: "1:892321252302:web:0813270f26485d7caa619f"
+  apiKey: "AIzaSyAkBklMejDxbhegb0c9Pg5OsDSjrXVNvjY",
+  authDomain: "civic-sense-c91e3.firebaseapp.com",
+  projectId: "civic-sense-c91e3",
+  storageBucket: "civic-sense-c91e3.firebasestorage.app",
+  messagingSenderId: "621449590665",
+  appId: "1:621449590665:web:58fa9827acebde5bb79358",
+  measurementId: "G-XD0W32FRQ8"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase - check if app already exists to prevent duplicate initialization
+let app;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
 export default app;
+
+
