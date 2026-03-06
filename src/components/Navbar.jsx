@@ -39,7 +39,13 @@ export default function Navbar({ onToggleSidebar }) {
                     {/* Left section */}
                     <div className="flex items-center space-x-4">
                         {/* Toggle Button (mobile + desktop) */}
-
+                        <button
+                            onClick={toggleSidebar}
+                            className="text-gray-700 hover:text-emerald-600 transition"
+                            aria-label="Toggle sidebar"
+                        >
+                            ☰
+                        </button>
 
                         {/* Logo */}
                         <Link to={Dashboard} aria-label="Visit home page">
