@@ -1,4 +1,8 @@
+// src/services/firebaseConfig.js
 import { initializeApp, getApp, getApps } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAkBklMejDxbhegb0c9Pg5OsDSjrXVNvjY",
@@ -10,13 +14,10 @@ const firebaseConfig = {
   measurementId: "G-XD0W32FRQ8"
 };
 
-// Initialize Firebase - check if app already exists to prevent duplicate initialization
-let app;
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const functions = getFunctions(app);
+export const googleProvider = new GoogleAuthProvider();
 export default app;
-
-

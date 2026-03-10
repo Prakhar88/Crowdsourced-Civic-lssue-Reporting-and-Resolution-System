@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
-import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import app from "../services/firebaseConfig";
 import { Shield } from "lucide-react";
 import { FaGoogle, FaTrash, FaTools, FaTrafficLight, FaUsers, FaShareAlt, FaThumbsUp } from "react-icons/fa";
@@ -21,6 +21,21 @@ export default function Login() {
     const [error, setError] = useState("");
     const [resetSent, setResetSent] = useState(false);
     const navigate = useNavigate();
+
+    const getRoleAndRedirect = async (uid) => {
+        try {
+            const adminSnap = await getDoc(doc(db, "admins", uid));
+            if (adminSnap.exists()) { navigate("/dashboard"); return; }
+
+            const workerSnap = await getDoc(doc(db, "workers", uid));
+            if (workerSnap.exists()) { navigate("/worker/dashboard"); return; }
+
+            navigate("/citizen"); // default → citizen portal
+        } catch (err) {
+            console.error("Role check failed:", err);
+            navigate("/citizen"); // safe fallback
+        }
+    };
 
     const isValidEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -57,8 +72,8 @@ export default function Login() {
                 lastLogin: serverTimestamp()
             }, { merge: true });
 
-            // ✅ FIX #4: Removed console.log that leaked user data
-            navigate("/dashboard");
+            // ✅ Role-based redirect
+            await getRoleAndRedirect(userCredential.user.uid);
         } catch (error) {
             const errorMessages = {
                 "auth/invalid-email": "Invalid email address",
@@ -82,22 +97,16 @@ export default function Login() {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
-            console.log("✅ Google auth successful:", user.email);
-
-            // ✅ Save user to Firestore (fire and forget - don't block navigation)
+            // Save user to Firestore (fire and forget)
             setDoc(doc(db, "users", user.uid), {
                 name: user.displayName,
                 email: user.email,
                 photoURL: user.photoURL || "",
-                role: "user",
                 lastLogin: serverTimestamp()
-            }, { merge: true })
-                .then(() => console.log("✅ Firestore user record created/updated"))
-                .catch((err) => console.warn("⚠️ Firestore write failed:", err.message));
+            }, { merge: true }).catch(() => {});
 
-            // ✅ Navigate immediately - auth is successful
-            console.log("✅ Navigating to dashboard...");
-            navigate("/dashboard");
+            // ✅ Role-based redirect
+            await getRoleAndRedirect(user.uid);
         } catch (error) {
             console.error("❌ Google login error:", error.code, error.message);
             if (error.code === "auth/popup-closed-by-user") {
@@ -244,16 +253,8 @@ export default function Login() {
                     <FaGoogle /> {loading ? "Please wait..." : "Sign in with Google"}
                 </button>
 
-                {/* ✅ FIX #7: Added signup navigation link */}
-                <p className="text-gray-400 text-sm text-center mt-4">
-                    Don't have an account?{" "}
-                    <button
-                        type="button"
-                        onClick={() => navigate("/signup")}
-                        className="text-emerald-400 hover:underline font-medium"
-                    >
-                        Sign up
-                    </button>
+                <p className="text-gray-400 text-xs text-center mt-4">
+                    Admin? Use Google Sign In · Workers use email/password
                 </p>
 
                 <p className="text-gray-400 text-xs text-center mt-4">

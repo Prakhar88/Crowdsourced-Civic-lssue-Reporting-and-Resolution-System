@@ -1,57 +1,72 @@
-import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
-import { FaBell } from "react-icons/fa";
+// src/pages/cards/LiveReports.jsx
+import { useReports } from "../../hooks/useReports";
 
-const data = [
-    { day: "Mon", reports: 12 },
-    { day: "Tue", reports: 18 },
-    { day: "Wed", reports: 24 },
-    { day: "Thu", reports: 20 },
-    { day: "Fri", reports: 30 },
-    { day: "Sat", reports: 22 },
-    { day: "Sun", reports: 16 },
-];
+const statusColor = {
+  pending: "bg-yellow-100 text-yellow-800",
+  assigned: "bg-blue-100 text-blue-800",
+  in_progress: "bg-purple-100 text-purple-800",
+  resolved: "bg-green-100 text-green-800",
+};
 
 export default function LiveReports({ className }) {
+  const { reports, loading } = useReports();
+
+  if (loading)
     return (
-        <div
-            className={`${className} relative bg-gradient-to-br from-emerald-400 to-emerald-600/80 backdrop-blur-md rounded-2xl shadow-xl p-6 text-white flex flex-col justify-between`}
-            style={{ minHeight: "250px" }}
-        >
-            {/* Icon */}
-            <div className="absolute top-4 right-4 text-white/30 text-3xl">
-                <FaBell />
-            </div>
-
-            {/* Title */}
-            <h3 className="text-lg font-semibold mb-2">Live Reports</h3>
-
-            {/* Main Metric */}
-            <p className="text-4xl font-bold mb-1 drop-shadow-md">145</p>
-            <p className="text-sm text-white/70 mb-4">Reports submitted this week</p>
-
-            {/* Sparkline / mini line chart */}
-            <div className="flex-1">
-                <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 10 }}>
-                        <Tooltip
-                            contentStyle={{
-                                backgroundColor: "rgba(0,0,0,0.7)",
-                                border: "none",
-                                borderRadius: "6px",
-                                color: "#fff",
-                            }}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey="reports"
-                            stroke="#ffffff"
-                            strokeWidth={3}
-                            dot={{ r: 5, fill: "#34D399", stroke: "#fff", strokeWidth: 2 }}
-                            activeDot={{ r: 7 }}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
+      <div className={`${className} flex items-center justify-center h-48`}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
     );
+
+  if (reports.length === 0)
+    return (
+      <div className={className}>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          Live Reports
+        </h2>
+        <p className="text-gray-400 text-sm text-center py-8">
+          No reports submitted yet.
+        </p>
+      </div>
+    );
+
+  return (
+    <div className={className}>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">Live Reports</h2>
+        <span className="text-sm text-gray-500">{reports.length} total</span>
+      </div>
+      <div className="overflow-auto max-h-72 space-y-2">
+        {reports.slice(0, 10).map((report) => (
+          <div
+            key={report.id}
+            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 truncate">
+                {report.title}
+              </p>
+              <p className="text-xs text-gray-500">
+                {report.location?.address || "Unknown location"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 ml-2">
+              {report.aiConfidence != null && (
+                <span className="text-xs text-gray-400">
+                  AI: {Math.round(report.aiConfidence * 100)}%
+                </span>
+              )}
+              <span
+                className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  statusColor[report.status] || "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {report.status?.replace("_", " ") || "unknown"}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

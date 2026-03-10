@@ -1,57 +1,71 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import app from "./services/firebaseConfig";
-
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import Analytics from "./pages/Analytics";
 
-const auth = getAuth(app);
+// Worker portal
+import WorkerLogin from "./pages/worker/WorkerLogin";
+import WorkerLayout from "./pages/worker/WorkerLayout";
+import WorkerDashboard from "./pages/worker/WorkerDashboard";
+import WorkerMapView from "./pages/worker/WorkerMapView";
+import WorkerProfile from "./pages/worker/WorkerProfile";
 
-// ✅ Protects routes from unauthenticated access
-function ProtectedRoute({ children }) {
-    const [user, setUser] = useState(undefined); // undefined = still checking
+function ProtectedRoute({ children, requiredRole }) {
+  const { user, role, authLoading } = useAuth();
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-            setUser(firebaseUser ?? null);
-        });
-        return () => unsubscribe();
-    }, []);
+  if (authLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center gap-3">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+        <p className="text-gray-500 text-sm">Loading...</p>
+      </div>
+    </div>
+  );
 
-    // Still checking auth state — render nothing (or a spinner)
-    if (user === undefined) return null;
-
-    // Not logged in — redirect to login
-    if (!user) return <Navigate to="/login" replace />;
-
-    return children;
+  if (!user) return <Navigate to="/login" replace />;
+  if (requiredRole && role !== requiredRole) return <Navigate to="/login" replace />;
+  return children;
 }
 
 function App() {
-    return (
-        <BrowserRouter>
-            <Routes>
-                {/* ✅ FIX #1: Root redirect */}
-                
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/worker/login" element={<WorkerLogin />} />
 
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
+          {/* Admin routes */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute requiredRole="admin"><Dashboard /></ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute requiredRole="admin"><Reports /></ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>
+          } />
 
-                
+          {/* Worker routes — nested under WorkerLayout */}
+          <Route path="/worker" element={
+            <ProtectedRoute requiredRole="worker"><WorkerLayout /></ProtectedRoute>
+          }>
+            <Route path="dashboard" element={<WorkerDashboard />} />
+            <Route path="map" element={<WorkerMapView />} />
+            <Route path="profile" element={<WorkerProfile />} />
+          </Route>
 
-                {/* ✅ FIX #3: Protected routes */}
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-
-                {/* ✅ FIX #2: Catch-all 404 redirect */}
-                <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-        </BrowserRouter>
-    );
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
 
 export default App;
