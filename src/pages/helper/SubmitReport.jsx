@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { createReport } from "../../hooks/useReports";
+import { createReport,analyzeReport } from "../../hooks/useReports";
 import { uploadToSupabase } from "../../lib/utils";
 import { supabase } from "../../lib/supabase";
 import { CATEGORIES } from "../../lib/constants";
 import useGeolocation from "../../hooks/useGeolocation";
 import GeoCamera from "../../components/camera/GeoCamera";
+
 
 export default function SubmitReport() {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ export default function SubmitReport() {
       );
 
       // Create report
-      await createReport(token, {
+      const createdReport = createReport(token, {
         title,
         description,
         category,
@@ -52,7 +53,11 @@ export default function SubmitReport() {
         lng: position.lng,
         reporter_id: user.id,
       });
-
+      await analyzeReport(token, {
+      reportId: createdReport.id,
+      description,
+      title,
+      });
       navigate("/helper/my-reports");
     } catch (err) {
       setError(err.message);

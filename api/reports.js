@@ -47,24 +47,25 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
-    const { title, description, category, image_url, lat, lng, reporter_id } = req.body;
+  const { title, description, category, image_url, lat, lng, reporter_id } = req.body;
 
-    const report = await prisma.report.create({
-      data: {
-        title,
-        description,
-        category,
-        imageUrl: image_url,
-        lat,
-        lng,
-        reporterId: reporter_id,
-        status: "pending",
-        priority: "medium",
-      },
-    });
+  const report = await prisma.report.create({
+    data: {
+      title,
+      description,
+      category,
+      imageUrl: image_url,
+      lat,
+      lng,
+      reporterId: reporter_id,
+      status: "pending",
+      priority: "medium",
+    },
+  });
 
-    return res.status(201).json(report);
-  }
+  // ✅ RETURN THE CREATED REPORT (THIS IS CRITICAL)
+  return res.status(200).json(report);
+}
 
   if (req.method === "PATCH") {
     const { id } = req.query;

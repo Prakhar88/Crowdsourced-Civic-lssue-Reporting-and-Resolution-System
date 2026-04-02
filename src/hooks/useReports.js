@@ -118,3 +118,24 @@ export async function updateReportStatus(token, reportId, status) {
   if (!res.ok) throw new Error("Failed to update report");
   return res.json();
 }
+export async function analyzeReport(token, { reportId, description, title }) {
+  const res = await fetch("/api/analyze-report", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      reportId,
+      description,
+      title,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to analyze report");
+  }
+
+  return res.json();
+}
